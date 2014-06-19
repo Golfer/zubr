@@ -28,7 +28,7 @@ class Zubr < Sinatra::Base
 
 	get '/' do
 		content_type :json
-		{ message: 'Home Page@!@!' }.to_json
+		{ message: '!!!Home Page@!@!' }.to_json
 	end
 
 	get '/cookorama' do
