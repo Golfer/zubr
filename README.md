@@ -1,4 +1,4 @@
 zubr
 ====
 
-sinatra application
+application
