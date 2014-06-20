@@ -1,9 +1,11 @@
 require 'sinatra/base'
 require 'rest_client'
 require 'fileutils'
+require 'open-uri'
 require 'nokogiri'
 require 'json'
 require 'yaml'
+
 
 Dir[File.dirname(__FILE__) + '/lib/parser/*_parser.rb'].each {|file| require file }
 
@@ -11,9 +13,7 @@ class ZubrBase < Sinatra::Base
 
 	LOG_PATH = "#{settings.root}/log/#{settings.environment}.log"
 
-
 	class << self
-
 		def create_directory(path)
 			Dir.mkdir(path) unless File.exists?(path)
 		end
@@ -21,8 +21,8 @@ class ZubrBase < Sinatra::Base
 		def download_image(img)
 			p 'Start Download images' #TODO
 		end
-
 	end
+
 	configure do
 		set :server, 'webrick'
 		set :partial_template_engine, :haml

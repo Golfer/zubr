@@ -15,12 +15,11 @@ class CookoramaParser
 			extract_page_data = Nokogiri::HTML(open(path_url))
 			path_parse_files = "#{YAML_DIR_FILE}/cookorama.net/uk/new/"
 
-			current_review = Hash.new
-			content_list = extract_data.css('div#content')
+			content_list = extract_page_data.css('div#content')
 			name_file = content_list.at_css('div#nav div#blog-menu h1').text
 
-			FileUtils::mkdir_p(path) unless File.exists?(path)
-			File.open("#{path}/#{name_file.downcase.gsub(/\s/, '_')}.json", 'w') do |json_file|
+			FileUtils::mkdir_p(path_parse_files) unless File.exists?(path_parse_files)
+			File.open("#{path_parse_files}/#{name_file.downcase.gsub(/\s/, '_')}.json", 'w') do |json_file|
 				puts 'Start parse  CookoramaParser'
 				json_file.write('[')
 				add_coma = false
