@@ -7,8 +7,10 @@
 /spec/reports/
 /test/tmp/
 /test/version_tmp/
-/tmp/
-/log/
+
+# Ignore all logfiles and tempfiles.
+/log/*.log
+/tmp
 
 ## Specific to RubyMotion:
 .dat*
