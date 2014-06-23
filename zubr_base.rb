@@ -11,7 +11,14 @@ Dir[File.dirname(__FILE__) + '/lib/parser/*_parser.rb'].each {|file| require fil
 
 class ZubrBase < Sinatra::Base
 
+	configure :production, :development do
+		enable :logging
+	end
+
+	DIR_LOG = "#{settings.root}/log/"
 	LOG_PATH = "#{settings.root}/log/#{settings.environment}.log"
+
+	Dir.mkdir(DIR_LOG) unless File.exist?(DIR_LOG)
 
 	class << self
 		def create_directory(path)
@@ -19,7 +26,7 @@ class ZubrBase < Sinatra::Base
 		end
 
 		def download_image(img)
-			p 'Start Download images' #TODO
+			logger.info "Download image #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
 		end
 	end
 
@@ -39,23 +46,25 @@ class ZubrBase < Sinatra::Base
 	before { env['rack.logger'] = Logger.new(LOG_PATH) }
 
 	get '/' do
+		logger.info "Root Path Zubr Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
 		content_type :json
 		{ message: '!!! -- >Home Page@!@!' }.to_json
 	end
 
 	get '/cookorama' do
-		puts 'Run Cookorama Parser !!!'
+		logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
 		CookoramaParser.parse_page('http://cookorama.net/')
+	end
+
+	get '/taste-most-recent' do
+		logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+		TasteParser.parse_page('http://www.taste.com.au/recipes/collections/15+minute+meals?sort=recent&ref=collections,15-minute-meals')
 	end
 
 	not_found do
 		content_type :json
 		halt 404, { error: 'URL not found' }.to_json
 	end
-
 end
 
 ZubrBase.run! if ENV['RACK_ENV'] != 'test'
-
-
-
