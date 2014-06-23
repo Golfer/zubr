@@ -1,7 +1,7 @@
 class CookoramaParser
 	class << self
-		YAML_DIR_FILE = 'public/yaml_files'
 		URL_PATH = 'http://cookorama.net/en/'
+		YAML_DIR_FILE = 'public/yaml_files'
 
 		def parse_recipe(url=nil)
 			path_url = url.empty? ? URL_PATH : url

@@ -1,0 +1,23 @@
+127.0.0.1 - - [23/Jun/2014 11:04:10] "GET /taste-most-recent HTTP/1.1" 404 25 0.0075
+127.0.0.1 - - [23/Jun/2014 11:04:41] "GET /taste-most-recent HTTP/1.1" 200 82 2.9129
+127.0.0.1 - - [23/Jun/2014 11:05:08] "GET /taste-most-recent HTTP/1.1" 200 82 3.5634
+I, [2014-06-23T11:23:39.568261 #9149]  INFO -- : Run Taste Parser 06/23/2014 11:23 AM
+127.0.0.1 - - [23/Jun/2014 11:23:42] "GET /taste-most-recent HTTP/1.1" 200 82 2.6767
+I, [2014-06-23T11:23:56.444856 #9149]  INFO -- : Run Taste Parser 06/23/2014 11:23 AM
+127.0.0.1 - - [23/Jun/2014 11:23:58] "GET /taste-most-recent HTTP/1.1" 200 82 2.5258
+I, [2014-06-23T11:31:29.212691 #9353]  INFO -- : Run Cookorama Parser 06/23/2014 11:31 AM
+I, [2014-06-23T11:42:20.774102 #9733]  INFO -- : Run Cookorama Parser 06/23/2014 11:42 AM
+127.0.0.1 - - [23/Jun/2014 11:42:46] "GET /cookorama HTTP/1.1" 200 - 26.0855
+I, [2014-06-23T17:48:14.508644 #4634]  INFO -- : Run Taste Parser 06/23/2014 17:48 PM
+127.0.0.1 - - [23/Jun/2014 17:48:17] "GET /taste-most-recent HTTP/1.1" 200 82 2.6981
+I, [2014-06-23T18:34:21.409084 #4634]  INFO -- : Run Taste Parser 06/23/2014 18:34 PM
+127.0.0.1 - - [23/Jun/2014 18:34:23] "GET /taste-most-recent HTTP/1.1" 200 82 2.5673
+I, [2014-06-23T18:59:24.416352 #6662]  INFO -- : Run Taste Parser 06/23/2014 18:59 PM
+127.0.0.1 - - [23/Jun/2014 18:59:27] "GET /taste-most-recent HTTP/1.1" 200 75 3.0961
+I, [2014-06-23T19:00:23.751825 #6727]  INFO -- : Run Taste Parser 06/23/2014 19:00 PM
+I, [2014-06-23T19:00:46.336120 #6763]  INFO -- : Run Taste Parser 06/23/2014 19:00 PM
+127.0.0.1 - - [23/Jun/2014 19:00:49] "GET /taste-most-recent HTTP/1.1" 200 75 2.9605
+I, [2014-06-23T19:04:32.719005 #7067]  INFO -- : Run Taste Parser 06/23/2014 19:04 PM
+I, [2014-06-23T19:05:59.683467 #7136]  INFO -- : Run Taste Parser 06/23/2014 19:05 PM
+I, [2014-06-23T19:06:47.671025 #7190]  INFO -- : Run Taste Parser 06/23/2014 19:06 PM
+127.0.0.1 - - [23/Jun/2014 19:06:50] "GET /taste-most-recent HTTP/1.1" 200 75 2.9098

@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 
+gem 'thin'
 gem 'json', '~> 1.8.1'
 gem 'activesupport', '~> 4.1.0'
 gem 'rest-client', '1.6.7'

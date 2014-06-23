@@ -1,28 +1,17 @@
-require 'sinatra/base'
-require 'rest_client'
-require 'fileutils'
-require 'open-uri'
-require 'nokogiri'
-require 'json'
-require 'yaml'
-
-
-Dir[File.dirname(__FILE__) + '/lib/parser/*_parser.rb'].each {|file| require file }
-
 class ZubrBase < Sinatra::Base
+	DIR_LOG = "#{settings.root}/log/"
+	LOG_PATH = "#{settings.root}/log/#{settings.environment}.log"
+
 
 	configure :production, :development do
 		enable :logging
 	end
 
-	DIR_LOG = "#{settings.root}/log/"
-	LOG_PATH = "#{settings.root}/log/#{settings.environment}.log"
-
-	Dir.mkdir(DIR_LOG) unless File.exist?(DIR_LOG)
+	FileUtils::mkdir_p(DIR_LOG) unless File.exists?(DIR_LOG)
 
 	class << self
 		def create_directory(path)
-			Dir.mkdir(path) unless File.exists?(path)
+			FileUtils::mkdir_p(path) unless File.exists?(path)
 		end
 
 		def download_image(img)
@@ -66,5 +55,3 @@ class ZubrBase < Sinatra::Base
 		halt 404, { error: 'URL not found' }.to_json
 	end
 end
-
-ZubrBase.run! if ENV['RACK_ENV'] != 'test'
