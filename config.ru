@@ -1,4 +1,4 @@
-require 'config/initialize'
+require './config/initialize'
 require './environment'
 
 ZubrBase.run! if ENV['RACK_ENV'] != 'test'
