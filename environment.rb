@@ -5,6 +5,7 @@ require 'rest_client'
 require 'fileutils'
 require 'open-uri'
 require 'nokogiri'
+require 'paperclip'
 require 'json'
 require 'yaml'
 

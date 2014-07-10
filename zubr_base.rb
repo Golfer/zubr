@@ -33,14 +33,14 @@ module Zubr
 
 
 		get '/' do
-			logger.info "Root Path Zubr Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+			logger.info "Root path #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
 			content_type :json
-			{ message: '!!! -- >Home Page@!@!' }.to_json
+			{ message: 'go to Home page' }.to_json
 		end
 
 		get '/cookorama' do
 			logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-			CookoramaParser.parse_page('http://cookorama.net/')
+			Zubr::CookoramaParser.parse('http://cookorama.net/')
 		end
 
 		get '/taste-most-recent' do
