@@ -10,7 +10,7 @@ class TasteParser
 			p '-----------------------------------------'
 			extract_page_data = Nokogiri::HTML(open(path_url))
 			path_parse_files = "#{YAML_DIR_FILE}/taste.com.au/recipes/collections/"
-			ZubrBase.create_directory(path_parse_files)
+			Zubr::Base.create_directory(path_parse_files)
 			p '**********************************************************************************'
 			p path_parse_files
 			p '**********************************************************************************'
@@ -21,7 +21,7 @@ class TasteParser
 			p ' ==================================  ====== = = = = = = = = = = = = = = = ='
 			p content_list
 			p ' ==================================  ====== = = = = = = = = = = = = = = = ='
-			p ZubrBase::LOG_PATH
+			p Zubr::Base::LOG_PATH
 			p ' ==================================  ====== = = = = = = = = = = = = = = = ='
 			#name_file = content_list.at_css('div#nav div#blog-menu h1').text
 
