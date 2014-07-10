@@ -17,17 +17,25 @@ module Zubr
 
 		before do
 			env['rack.logger'] = Logger.new(LOG_PATH)
-
 			#Create public folder images, yaml, log files
-			create_directory(Zubr::YAML_DIR_FILE) unless File.exists?(Zubr::YAML_DIR_FILE)
-			create_directory(Zubr::IMAGE_DIR_FILE) unless File.exists?(Zubr::IMAGE_DIR_FILE)
-			create_directory(DIR_LOG) unless File.exists?(DIR_LOG)
-
+			Zubr::Base.create_directory(Zubr::YAML_DIR_FILE) unless File.exists?(Zubr::YAML_DIR_FILE)
+			Zubr::Base.create_directory(Zubr::IMAGE_DIR_FILE) unless File.exists?(Zubr::IMAGE_DIR_FILE)
+			Zubr::Base.create_directory(DIR_LOG) unless File.exists?(DIR_LOG)
 		end
 
 		class << self
-			def download_image(img)
-				logger.info "Download image #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+			def create_directory(path)
+				FileUtils::mkdir_p(path) unless File.exists?(path)
+			end
+
+			def upload_image(img_link, file_name)
+				p "Download image #{img_link}  start: #{Time.now.strftime('%m/%d/%Y %H:%M %p')} file: #{file_name}"
+				upload = RecipeUploader.new
+				p upload.inspect
+				upload.file = img_link
+				upload.image = img_link = Zubr::IMAGE_DIR_FILE + File.join(filename) #записали в бд путь до изображения
+				upload.thumb = params[:thumb] = Zubr::IMAGE_DIR_FILE + '/thumb_' + File.join(filename) #записали в бд путь до превью изображения
+				upload.save #загрузили - сохранили
 			end
 		end
 
@@ -39,8 +47,8 @@ module Zubr
 		end
 
 		get '/cookorama' do
-			logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-			Zubr::CookoramaParser.parse('http://cookorama.net/')
+			logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')} - #{Zubr::Base.root}"
+			Zubr::Base::CookoramaParser.parse('http://cookorama.net/')
 		end
 
 		get '/taste-most-recent' do
@@ -54,9 +62,5 @@ module Zubr
 		end
 
 		private
-
-			def create_directory(path)
-				FileUtils::mkdir_p(path) unless File.exists?(path)
-			end
 	end
 end

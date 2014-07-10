@@ -7,3 +7,15 @@ I, [2014-07-10T13:03:17.711044 #10998]  INFO -- : Root path 07/10/2014 13:03 PM
 I, [2014-07-10T13:03:33.319906 #10998]  INFO -- : Run Cookorama Parser 07/10/2014 13:03 PM
 I, [2014-07-10T13:04:23.725854 #11093]  INFO -- : Run Cookorama Parser 07/10/2014 13:04 PM
 127.0.0.1 - - [10/Jul/2014 13:04:49] "GET /cookorama HTTP/1.1" 200 - 25.9530
+I, [2014-07-10T14:27:17.107337 #13411]  INFO -- : Run Cookorama Parser 07/10/2014 14:27 PM
+I, [2014-07-10T14:28:20.187842 #13462]  INFO -- : Run Cookorama Parser 07/10/2014 14:28 PM
+I, [2014-07-10T14:29:03.088105 #13540]  INFO -- : Run Cookorama Parser 07/10/2014 14:29 PM
+I, [2014-07-10T14:30:02.319924 #13579]  INFO -- : Run Cookorama Parser 07/10/2014 14:30 PM
+I, [2014-07-10T14:30:18.950038 #13622]  INFO -- : Run Cookorama Parser 07/10/2014 14:30 PM
+127.0.0.1 - - [10/Jul/2014 14:30:45] "GET /cookorama HTTP/1.1" 200 - 26.4343
+I, [2014-07-10T14:34:07.932327 #13761]  INFO -- : Run Cookorama Parser 07/10/2014 14:34 PM
+127.0.0.1 - - [10/Jul/2014 14:34:33] "GET /cookorama HTTP/1.1" 200 - 25.6933
+I, [2014-07-10T14:38:03.725617 #13841]  INFO -- : Run Cookorama Parser 07/10/2014 14:38 PM - /home/golfer/Developer/myWork/zubr
+127.0.0.1 - - [10/Jul/2014 14:38:04] "GET /cookorama HTTP/1.1" 200 29 0.9631
+I, [2014-07-10T14:41:58.216945 #14013]  INFO -- : Run Cookorama Parser 07/10/2014 14:41 PM - /home/golfer/Developer/myWork/zubr
+127.0.0.1 - - [10/Jul/2014 14:41:59] "GET /cookorama HTTP/1.1" 200 29 1.0090
