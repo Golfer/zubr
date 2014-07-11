@@ -1,57 +1,74 @@
-class ZubrBase < Sinatra::Base
-	DIR_LOG = "#{settings.root}/log/"
-	LOG_PATH = "#{settings.root}/log/#{settings.environment}.log"
+module Zubr
+	YAML_DIR_FILE = 'public/yaml_files'
+	IMAGE_DIR_FILE = 'public/image_files'
 
+	class Base < Sinatra::Base
+		DIR_LOG = "#{settings.root}/log/"
+		LOG_PATH = "#{settings.root}/log/#{settings.environment}.log"
 
-	configure :production, :development do
-		enable :logging
-	end
-
-	FileUtils::mkdir_p(DIR_LOG) unless File.exists?(DIR_LOG)
-
-	class << self
-		def create_directory(path)
-			FileUtils::mkdir_p(path) unless File.exists?(path)
+		configure do
+			set :server, 'webrick'
+			set :root, File.dirname(__FILE__)
+			enable :logging
+			file = File.new(LOG_PATH, 'a+')
+			file.sync = true
+			use Rack::CommonLogger, file
 		end
 
-		def download_image(img)
-			logger.info "Download image #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+		before do
+			env['rack.logger'] = Logger.new(LOG_PATH)
+			#Create public folder images, yaml, log files
+			Zubr::Base.create_directory(Zubr::YAML_DIR_FILE) unless File.exists?(Zubr::YAML_DIR_FILE)
+			Zubr::Base.create_directory(Zubr::IMAGE_DIR_FILE) unless File.exists?(Zubr::IMAGE_DIR_FILE)
+			Zubr::Base.create_directory(DIR_LOG) unless File.exists?(DIR_LOG)
 		end
-	end
 
-	configure do
-		set :server, 'webrick'
-		set :partial_template_engine, :haml
-		set :root, File.dirname(__FILE__)
-	end
+		class << self
+			def create_directory(path)
+				FileUtils::mkdir_p(path) unless File.exists?(path)
+			end
 
-	configure do
-		enable :logging
-		file = File.new(LOG_PATH, 'a+')
-		file.sync = true
-		use Rack::CommonLogger, file
-	end
+			def save_into_yaml_file(path_to_file, file, options={})
+				return false if file.nil?
+				file = File.new("#{Zubr::YAML_DIR_FILE}/#{path_to_file}#{file}.yml", 'w')
+				file.write(options.to_yaml)
+				file.close
+			end
 
-	before { env['rack.logger'] = Logger.new(LOG_PATH) }
+			#TODO save images
+			def upload_image(img_link, file_name)
+				p "Download image #{img_link}  start: #{Time.now.strftime('%m/%d/%Y %H:%M %p')} file: #{file_name}"
+				#upload = RecipeUploader.new
+				#upload.file = img_link
+				#upload.image = img_link = Zubr::IMAGE_DIR_FILE + File.join(filename) #записали в бд путь до изображения
+				#upload.thumb = params[:thumb] = Zubr::IMAGE_DIR_FILE + '/thumb_' + File.join(filename) #записали в бд путь до превью изображения
+				#upload.save #загрузили - сохранили
+			end
+		end
 
-	get '/' do
-		logger.info "Root Path Zubr Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-		content_type :json
-		{ message: '!!! -- >Home Page@!@!' }.to_json
-	end
 
-	get '/cookorama' do
-		logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-		CookoramaParser.parse_page('http://cookorama.net/')
-	end
+		get '/' do
+			logger.info "Root path #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+			content_type :json
+			{ message: 'go to Home page' }.to_json
+		end
 
-	get '/taste-most-recent' do
-		logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-		TasteParser.parse_page('http://www.taste.com.au/recipes/collections/15+minute+meals?sort=recent&ref=collections,15-minute-meals')
-	end
+		get '/cookorama' do
+			logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')} - #{Zubr::Base.root}"
+			#Zubr::Base::CookoramaParser.parse('http://cookorama.net/uk/index/page9/')
+			Zubr::Base::CookoramaParser.parse
+		end
 
-	not_found do
-		content_type :json
-		halt 404, { error: 'URL not found' }.to_json
+		get '/taste-most-recent' do
+			logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+			TasteParser.parse_page('http://www.taste.com.au/recipes/collections/15+minute+meals?sort=recent&ref=collections,15-minute-meals')
+		end
+
+		not_found do
+			content_type :json
+			halt 404, { error: 'URL not found' }.to_json
+		end
+
+		private
 	end
 end

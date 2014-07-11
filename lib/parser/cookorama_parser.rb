@@ -1,80 +1,108 @@
-class CookoramaParser
+class Zubr::Base::CookoramaParser
+	def initialize
+		logger.info "Initialize Zubr Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+	end
+
 	class << self
 		URL_PATH = 'http://cookorama.net/en/'
-		YAML_DIR_FILE = 'public/yaml_files'
-
-		def parse_recipe(url=nil)
-			path_url = url.empty? ? URL_PATH : url
-			puts '=------------'
-			puts [path_url]
-			puts '=------------'
-		end
-
-		def parse_page(url)
-			path_url = url.empty? ? URL_PATH : url
-			extract_page_data = Nokogiri::HTML(open(path_url))
-			path_parse_files = "#{YAML_DIR_FILE}/cookorama.net/uk/new/"
-
+		def parse(url = URL_PATH)
+			p "Start Parse #{url}"
+			@path_parse_files = url.match(/http:\/\/(.*)/)[1].gsub('.html','')
+			create_dir
+			extract_page_data = Nokogiri::HTML(open(url))
 			content_list = extract_page_data.css('div#content')
-			name_file = content_list.at_css('div#nav div#blog-menu h1').text
 
-			FileUtils::mkdir_p(path_parse_files) unless File.exists?(path_parse_files)
-			File.open("#{path_parse_files}/#{name_file.downcase.gsub(/\s/, '_')}.json", 'w') do |json_file|
-				puts 'Start parse  CookoramaParser'
-				json_file.write('[')
-				add_coma = false
-				topic = content_list.css('div .topic')
-				topic.each do |item|
-					topic_name = item.at('.title a').text
-					topic_href = item.at('.title a')["href"]
-					blockHash = { title: {name: topic_name, href: topic_href}}
-					puts "Parse: #{blockHash}"
-
-					detail_block_parse = Nokogiri::HTML(open("#{topic_href}"))
-					method_of_cooking = detail_block_parse.css('.content p.instructions').text
-					blockHash.merge!(cooking: method_of_cooking )
-					puts "Recept: #{blockHash}"
-					sleep 2
-
-					string = add_coma ? ", #{blockHash.to_json}" : blockHash.to_json
-					json_file.write(string)
-					add_coma = true
+			pagination = content_list.css('div #pagination')
+			if pagination.blank?
+				parse_page(url)
+			else
+				parse_page(url)
+				pagination.css('li').each do |item|
+					@next_page_link_number = (item.at('span').text.to_i + 1) if (item['class'] == 'active' && !item.at('span').text.blank?)
+					unless item.at('a').blank?
+						unless @next_page_link_number != item.at('a').text.to_i
+							puts '<<< ====== PAGINATION ================ >>>'
+							p item.at('a')
+							p item.at('a').text.to_i
+							puts '<<< ====== PAGINATION ================ >>>'
+							@path_parse_files = item.at('a')['href'].match(/http:\/\/(.*)/)[1]
+							create_dir
+							parse_page(item.at('a')['href'])
+						end
+					end
 				end
-
-
-				pagination = content_list.css('div #pagination')
-				pagination.each do |pagin|
-					puts '<<< ====== PAGINATION ================ >>>'
-					puts pagin
-					puts '<<< ====== PAGINATION ================ >>>'
-				end
-
-				json_file.write(']')
-				puts 'finish parse  CookoramaParser'
 			end
 		end
 
-		def write_to_file
-			create_path('file/test/')
-			file_name = 'test.yml'
+		private
 
-			d = YAML::load_file(file_name) #Load
-			d['content']['session'] = 2 #Modify
-			File.open("#{path}/#{file_name}", 'w') {|f| f.write d.to_yaml } #Store
-		end
+			def create_dir
+				p "Create Dirs when does not exists: #{@path_parse_files}"
+				Zubr::Base.create_directory("#{Zubr::YAML_DIR_FILE}/#{@path_parse_files}")
+				Zubr::Base.create_directory("#{Zubr::IMAGE_DIR_FILE}/#{@path_parse_files}")
+			end
 
-		def create_path(path)
-			FileUtils::mkdir_p(path) unless File.exists?(path)
-		end
+			def parse_page(parse_url)
+				extract_page_data = Nokogiri::HTML(open(parse_url))
+				content_list = extract_page_data.css('div#content')
 
-		def save_into_yaml_file(file_name, options=nil)
-			return false if file_name.nil?
-			FileUtils::mkdir_p YAML_DIR_FILE unless File.exists? YAML_DIR_FILE
-			file = File.new("#{YAML_DIR_FILE}/#{file_name.downcase.gsub(/\s/, '_')}.yml", 'w')
-			file.write({ 'options' => [1,2,3,4,5] }.to_yaml)
-			file.close
-		end
+				topic = content_list.css('div .topic')
+				topic.each do |item|
+					options={}
+					topic_name = item.at('.title a').text unless item.at('.title a').blank?
+					options.merge!(recipe_name: topic_name.nil? ? nil :topic_name)
+					topic_href = item.at('.title a')['href'] unless item.at('.title a').blank?
+					options.merge!(recipe_href: topic_href.nil? ? nil :topic_href)
+					file_name = topic_name.downcase.gsub(' ', '_').gsub('"', '')
+					header_img = item.at('.topic-recipe-img img')
+					options.merge!(header_image: header_img.nil? ? nil : header_img['src'])
+					Zubr::Base.upload_image(header_img['src'], file_name) unless header_img.blank?
 
+					p "Write to file #{file_name}"
+
+					speed_cooking = item.css('.topic-recipe-content ul').at('li:first-child a').text unless item.css('.topic-recipe-content ul').blank?
+					options.merge!(speed_cooking: speed_cooking.nil? ? nil : speed_cooking)
+
+					date_create = item.css('.voting-border').at('.date').text unless item.css('.voting-border').blank?
+					options.merge!(date_create: date_create.nil? ? nil : date_create)
+
+					top_tags = []
+					item.css('.top-tags li').each do |top_tag|
+						top_tags.push(top_tag.at('a').text)
+					end
+					options.merge!(top_tags: top_tags.nil? ? nil : top_tags)
+
+					tags = []
+					item.css('.tags li').each do |tag|
+						tags.push(tag.at('a').text)
+					end
+					options.merge!(tags: tags.nil? ? nil : tags)
+
+					unless topic_href.blank?
+						options.merge!(parse_recipe(topic_href))
+					end
+
+					Zubr::Base.save_into_yaml_file(@path_parse_files, file_name, options) unless file_name.blank?
+					sleep 1
+				end
+			end
+
+			def parse_recipe(url)
+				return false if url.nil?
+				recipe_options = {}
+				extract_recipe_data = Nokogiri::HTML(open(url))
+
+				all_ingridients = []
+				ingridients_table = extract_recipe_data.css('#view-topic .ingredients tr')
+				ingridients_table.each do |ingredient|
+					all_ingridients.push(ingredient.at('td:first .dot a').text => ingredient.at('td:nth-child(2)').text.to_s) unless ingredient['class'] != 'ingredient'
+				end
+				recipe_options.merge!(ingridients: all_ingridients.nil? ? nil : all_ingridients)
+
+				instructions = extract_recipe_data.css('#view-topic').at('.content .instructions').text
+				recipe_options.merge!(instructions: instructions.nil? ? nil : instructions)
+
+				recipe_options
+			end
 	end
-
 end
