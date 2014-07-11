@@ -28,14 +28,21 @@ module Zubr
 				FileUtils::mkdir_p(path) unless File.exists?(path)
 			end
 
+			def save_into_yaml_file(path_to_file, file, options={})
+				return false if file.nil?
+				file = File.new("#{Zubr::YAML_DIR_FILE}/#{path_to_file}#{file}.yml", 'w')
+				file.write(options.to_yaml)
+				file.close
+			end
+
+			#TODO save images
 			def upload_image(img_link, file_name)
 				p "Download image #{img_link}  start: #{Time.now.strftime('%m/%d/%Y %H:%M %p')} file: #{file_name}"
-				upload = RecipeUploader.new
-				p upload.inspect
-				upload.file = img_link
-				upload.image = img_link = Zubr::IMAGE_DIR_FILE + File.join(filename) #записали в бд путь до изображения
-				upload.thumb = params[:thumb] = Zubr::IMAGE_DIR_FILE + '/thumb_' + File.join(filename) #записали в бд путь до превью изображения
-				upload.save #загрузили - сохранили
+				#upload = RecipeUploader.new
+				#upload.file = img_link
+				#upload.image = img_link = Zubr::IMAGE_DIR_FILE + File.join(filename) #записали в бд путь до изображения
+				#upload.thumb = params[:thumb] = Zubr::IMAGE_DIR_FILE + '/thumb_' + File.join(filename) #записали в бд путь до превью изображения
+				#upload.save #загрузили - сохранили
 			end
 		end
 
@@ -48,7 +55,8 @@ module Zubr
 
 		get '/cookorama' do
 			logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')} - #{Zubr::Base.root}"
-			Zubr::Base::CookoramaParser.parse('http://cookorama.net/')
+			#Zubr::Base::CookoramaParser.parse('http://cookorama.net/uk/index/page9/')
+			Zubr::Base::CookoramaParser.parse
 		end
 
 		get '/taste-most-recent' do
