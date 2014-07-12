@@ -18,16 +18,14 @@ class Zubr::Base::CookoramaParser
 			else
 				parse_page(url)
 				pagination.css('li').each do |item|
-					@next_page_link_number = (item.at('span').text.to_i + 1) if (item['class'] == 'active' && !item.at('span').text.blank?)
+					if item['class'] == 'active'
+						@current_page_number = item.at('span').text.to_i
+					end
 					unless item.at('a').blank?
-						unless @next_page_link_number != item.at('a').text.to_i
-							puts '<<< ====== PAGINATION ================ >>>'
-							p item.at('a')
-							p item.at('a').text.to_i
-							puts '<<< ====== PAGINATION ================ >>>'
+						unless (@current_page_number + 1) != item.at('a').text.to_i
 							@path_parse_files = item.at('a')['href'].match(/http:\/\/(.*)/)[1]
 							create_dir
-							parse_page(item.at('a')['href'])
+							parse(item.at('a')['href'])
 						end
 					end
 				end
@@ -60,10 +58,10 @@ class Zubr::Base::CookoramaParser
 
 					p "Write to file #{file_name}"
 
-					speed_cooking = item.css('.topic-recipe-content ul').at('li:first-child a').text unless item.css('.topic-recipe-content ul').blank?
+					speed_cooking = item.css('.topic-recipe-content ul').at('li:first-child a').text unless item.css('.topic-recipe-content ul').at('li:first-child a').blank?
 					options.merge!(speed_cooking: speed_cooking.nil? ? nil : speed_cooking)
 
-					date_create = item.css('.voting-border').at('.date').text unless item.css('.voting-border').blank?
+					date_create = item.css('.voting-border').at('.date').text unless item.css('.voting-border').at('.date').blank?
 					options.merge!(date_create: date_create.nil? ? nil : date_create)
 
 					top_tags = []

@@ -55,8 +55,8 @@ module Zubr
 
 		get '/cookorama' do
 			logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')} - #{Zubr::Base.root}"
-			#Zubr::Base::CookoramaParser.parse('http://cookorama.net/uk/index/page9/')
-			Zubr::Base::CookoramaParser.parse
+			Zubr::Base::CookoramaParser.parse('http://cookorama.net/uk/index/page1/')
+			#Zubr::Base::CookoramaParser.parse
 		end
 
 		get '/taste-most-recent' do
