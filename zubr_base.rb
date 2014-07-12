@@ -59,9 +59,18 @@ module Zubr
 			#Zubr::Base::CookoramaParser.parse
 		end
 
+		get '/taste' do
+			logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+			TasteParser.parse
+		end
+
 		get '/taste-most-recent' do
 			logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-			TasteParser.parse_page('http://www.taste.com.au/recipes/collections/15+minute+meals?sort=recent&ref=collections,15-minute-meals')
+			TasteParser.parse('http://www.taste.com.au/recipes/collections/15+minute+meals?sort=recent&ref=collections,15-minute-meals')
+		end
+		get '/taste-asian-recipes' do
+			logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+			TasteParser.parse('http://www.taste.com.au/recipes/collections/asian+recipes/1?ref=collections,asian-recipes')
 		end
 
 		not_found do
