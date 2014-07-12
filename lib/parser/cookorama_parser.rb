@@ -100,6 +100,9 @@ class Zubr::Base::CookoramaParser
 				instructions = extract_recipe_data.css('#view-topic').at('.content .instructions').text
 				recipe_options.merge!(instructions: instructions.nil? ? nil : instructions)
 
+				instruction_preparations = extract_recipe_data.css('#view-topic').at('.content').after('.instructions').text
+				recipe_options.merge!(instruction_preparations: instruction_preparations.nil? ? nil : instruction_preparations)
+
 				recipe_options
 			end
 	end
