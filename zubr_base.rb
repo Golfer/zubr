@@ -35,6 +35,11 @@ module Zubr
 				file.close
 			end
 
+			#for replase all specials chars
+			def mask(param)
+				param.gsub(/[^a-zA-Z0-9\-]/,"_").squeeze("_").gsub(/(^_|_$)/, '')
+			end
+
 			#TODO save images
 			def upload_image(img_link, file_name)
 				p "Download image #{img_link}  start: #{Time.now.strftime('%m/%d/%Y %H:%M %p')} file: #{file_name}"
@@ -61,16 +66,7 @@ module Zubr
 
 		get '/taste' do
 			logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-			TasteParser.parse
-		end
-
-		get '/taste-most-recent' do
-			logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-			TasteParser.parse('http://www.taste.com.au/recipes/collections/15+minute+meals?sort=recent&ref=collections,15-minute-meals')
-		end
-		get '/taste-asian-recipes' do
-			logger.info "Run Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-			TasteParser.parse('http://www.taste.com.au/recipes/collections/asian+recipes/1?ref=collections,asian-recipes')
+			TasteParser.parse(params.blank? ? nil : params)
 		end
 
 		not_found do
