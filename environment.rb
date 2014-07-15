@@ -8,6 +8,7 @@ require 'nokogiri'
 require 'carrierwave'
 require 'json'
 require 'yaml'
+require 'addressable/uri'
 
 Bundler.require
 
