@@ -4,33 +4,52 @@ class Zubr::Base::TasteParser
 	end
 
 	class << self
-		URL_PATH = 'http://www.taste.com.au/'
-		def parse(url = URL_PATH)
-			p "Start Parse #{url}"
-			@path_parse_files = url.match(/http:\/\/(.*)/)[1].gsub('.html','')
+		URL_PATH = 'http://www.taste.com.au/recipes/collections/'
+		def parse(params)
+			p "Start Parse #{params.nil? ? "Params Default URL: #{URL_PATH}" : params}"
+			path_to_parse = params.nil? ? URL_PATH : params['url']
+			url = Addressable::URI.parse(path_to_parse)
+			@path_parse_files = Zubr::Base.mask(url.host)
 			create_dir
-			extract_page_data = Nokogiri::HTML(open(url))
-			content_list = extract_page_data.css('.module-content')
+			path_params = Zubr::Base.mask(url.path)
 
-			pagination = content_list.css('.paging .page-numbers')
-			if pagination.blank?
-				parse_page(url)
-			else
-				parse_page(url)
-				pagination.css('a').each do |item|
-					if item['class'] == 'on selected'
-						@current_page_number = item.text.to_i unless item.at('a').blank?
-						break
-					end
-					unless item.blank?
-						unless (@current_page_number + 1) != item.text.to_i
-							@path_parse_files = item['href'].match(/http:\/\/(.*)/)[1]
-							create_dir
-							parse(item['href'])
-						end
-					end
-				end
-			end
+			p @path_parse_files
+			p path_params
+
+			#link_in = path_to_parse.match(/www.taste.com.au\/(.*)/)[1]
+			#params_in = $1.gsub(/[^a-zA-Z0-9\-]/,"_").gsub('-', '_').squeeze("_").chomp('_')
+
+
+
+			#p CGI::parse(request.query_string)
+			#case parse_params
+			#	when 'collections'
+			#		parse_collections(url)
+			#	else
+			#		p "Another args ++++++ #{@path_parse}"
+			#end
+			#extract_page_data = Nokogiri::HTML(open(url))
+			#content_list = extract_page_data.css('.module-content')
+
+			#pagination = content_list.css('.paging .page-numbers')
+			#if pagination.blank?
+			#	parse_page(url)
+			#else
+			#	parse_page(url)
+			#	pagination.css('a').each do |item|
+			#		if item['class'] == 'on selected'
+			#			@current_page_number = item.text.to_i unless item.at('a').blank?
+			#			break
+			#		end
+			#		unless item.blank?
+			#			unless (@current_page_number + 1) != item.text.to_i
+			#				@path_parse_files = item['href'].match(/http:\/\/(.*)/)[1]
+			#				create_dir
+			#				parse(item['href'])
+			#			end
+			#		end
+			#	end
+			#end
 
 		end
 
@@ -40,6 +59,11 @@ class Zubr::Base::TasteParser
 			p "Create Dirs when does not exists: #{@path_parse_files}"
 			Zubr::Base.create_directory("#{Zubr::YAML_DIR_FILE}/#{@path_parse_files}")
 			Zubr::Base.create_directory("#{Zubr::IMAGE_DIR_FILE}/#{@path_parse_files}")
+		end
+
+
+		def parse_collections(url)
+			p "Start Collection Parse: #{url}"
 		end
 
 		def parse_page(parse_url)
