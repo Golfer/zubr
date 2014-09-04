@@ -30,14 +30,14 @@ module Zubr
 
 			def save_into_yaml_file(path_to_file, file, options={})
 				return false if file.nil?
-				file = File.new("#{Zubr::YAML_DIR_FILE}/#{path_to_file}#{file}.yml", 'w')
+				file = File.new("#{Zubr::YAML_DIR_FILE}/#{path_to_file}#{mask(file)}.yml", 'w')
 				file.write(options.to_yaml)
 				file.close
 			end
 
 			#for replase all specials chars
 			def mask(param)
-				param.gsub(/[^a-zA-Z0-9\-]/,"_").squeeze("_").gsub(/(^_|_$)/, '')
+				param.gsub(/[^a-zA-Z0-9\-]/,'_').gsub(/(^_|_$)/, '').gsub('/','\/').squeeze('_')
 			end
 
 			#TODO save images
@@ -60,8 +60,8 @@ module Zubr
 
 		get '/cookorama' do
 			logger.info "Run Cookorama Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')} - #{Zubr::Base.root}"
-			Zubr::Base::CookoramaParser.parse('http://cookorama.net/uk/index/page1/')
-			#Zubr::Base::CookoramaParser.parse
+			#Zubr::Base::CookoramaParser.parse('http://cookorama.net/uk/index/page1/')
+			Zubr::Base::CookoramaParser.parse
 		end
 
 		get '/taste' do

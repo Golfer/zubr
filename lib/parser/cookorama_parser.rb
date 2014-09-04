@@ -81,7 +81,7 @@ class Zubr::Base::CookoramaParser
 					end
 
 					Zubr::Base.save_into_yaml_file(@path_parse_files, file_name, options) unless file_name.blank?
-					sleep 1
+					sleep rand(2)
 				end
 			end
 

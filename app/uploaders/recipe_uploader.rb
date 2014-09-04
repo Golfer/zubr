@@ -13,7 +13,7 @@ class RecipeUploader < CarrierWave::Uploader::Base
   end
 
   version :small_thumb, :from_version => :thumb do
-	  process resize_to_fill: [60, 60]
+	  process :resize_to_limit => [200, 200]
   end
 
 end
