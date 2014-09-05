@@ -148,16 +148,18 @@ class Zubr::Base::TasteParser
 				options.merge!(recipe_name: recipe_name.nil? ? nil : recipe_name)
 				recipe_href = recipe.at('.heading a')['href'] unless recipe.at('.heading a').blank?
 				options.merge!(recipe_href: recipe_href.nil? ? nil : recipe_href)
-				recipe_img  = recipe.at('img')['src'] unless recipe.at('img').blank?
-				options.merge!(header_img: recipe_img.nil? ? nil : recipe_img['src'])
-				Zubr::Base.upload_image(recipe_img['src'], file_name) unless recipe_img.blank?
+				recipe_img_small  = recipe.at('img')['src'] unless recipe.at('img').blank?
+				options.merge!(header_img: recipe_img_small.nil? ? nil : recipe_img_small['src'])
+				Zubr::Base.upload_image(recipe_img_small['src'], file_name) unless recipe_img_small.blank?
 				#Zubr::Base.upload_image(recipe.at('img')['src'], file_name) unless unless recipe.at('img').blank?
 				#TODO write method parse current recipe
 				#p [recipe_href, file_name , recipe_img] #todo
 				if recipe_href
 					p "Write to file #{file_name}"
-					parse_recipe(recipe_href)
-					#options.merge!(parse_recipe(recipe_href))
+					options.merge!(parse_recipe(recipe_href))
+					Zubr::Base.save_into_yaml_file(@path_parse_files, file_name, options) unless file_name.blank?
+					p sleep rand(1)
+					break
 				end
 			end
 			#TODO Pagination recursed method!!!!!
@@ -167,33 +169,46 @@ class Zubr::Base::TasteParser
 			#	p pagination_block
 			#	p 'Start parse  pagination when this pagination exists'
 			#end
-			#Zubr::Base.save_into_yaml_file(@path_parse_files, file_name, options) unless file_name.blank?
-			sleep 1
-
 		end
 
 		def parse_recipe(url)
 			return false if url.nil?
-
-			p '*******parse_recipe********************'
-			p [url]
-			p '*******parse_recipe********************'
-
 			recipe_options = {}
 			extract_recipe_data = Nokogiri::HTML(open(url))
+			data_page = extract_recipe_data.css('.group-2 .group-content')
+			quote_left = data_page.css('.recipe-detail .quote-left').text
+			recipe_options.merge!(quote_left: quote_left.nil? ? nil : quote_left)
+			prep_time = data_page.css('.content-item .prepTime em').text
+			recipe_options.merge!(prep_time: prep_time.nil? ? nil : prep_time)
+			cook_time = data_page.css('.content-item .cookTime em').text
+			recipe_options.merge!(cook_time: cook_time.nil? ? nil : cook_time)
+			ingredient_count = data_page.css('.content-item .ingredientCount em').text
+			recipe_options.merge!(ingredient_count: ingredient_count.nil? ? nil : ingredient_count)
+			difficulty_title = data_page.css('.content-item .difficultyTitle em').text
+			recipe_options.merge!(difficulty_title: difficulty_title.nil? ? nil : difficulty_title)
+			servings = data_page.css('.content-item .servings em').text
+			recipe_options.merge!(servings: servings.nil? ? nil : servings)
+			rating = data_page.css('.content-item .rating .star-level').text
+			recipe_options.merge!(rating: rating.nil? ? nil : rating)
+			recipe_img_thumb = data_page.at('.recipe-detail .print-thumb')['src']
+			recipe_options.merge!(recipe_img_thumb: recipe_img_thumb.nil? ? nil : recipe_img_thumb)
+			Zubr::Base.upload_image(recipe_img_thumb['src'], file_name = 'fakeTODO') unless recipe_img_thumb.blank? #TODO
+			#TODO
+			#source_author = data_page.css('.source-author')
 			all_ingridients = []
-			#ingridients_table = extract_recipe_data.css('#view-topic .ingredients tr')
-			#ingridients_table.each do |ingredient|
-			#	all_ingridients.push(ingredient.at('td:first .dot a').text => ingredient.at('td:nth-child(2)').text.to_s) unless ingredient['class'] != 'ingredient'
-			#end
-			#recipe_options.merge!(ingridients: all_ingridients.nil? ? nil : all_ingridients)
-			#
-			#instructions = extract_recipe_data.css('#view-topic').at('.content .instructions').text
-			#recipe_options.merge!(instructions: instructions.nil? ? nil : instructions)
-			#
-			#instruction_preparations = extract_recipe_data.css('#view-topic').at('.content').after('.instructions').text
-			#recipe_options.merge!(instruction_preparations: instruction_preparations.nil? ? nil : instruction_preparations)
-			#
+			ingredients_table = data_page.css('.ingredients-nutrition .ingredients-tab-content')
+			ingredients_table.css('li').each do |ingredient|
+				all_ingridients.push(ingredient.text.split.join(" ").to_s) if ingredient
+			end
+			recipe_options.merge!(ingridients: all_ingridients.nil? ? nil : all_ingridients)
+			#TODO
+			nutritions_table = data_page.css('.ingredients-nutrition .nutrition-tab-content')
+
+			all_instruction_preparations_step = []
+			data_page.css('.method-tab-content li').each do |method_step|
+				all_instruction_preparations_step.push(Zubr::Base.mask(method_step.css('.step').text.downcase).to_sym => method_step.css('.description').text.to_s) if method_step
+			end
+			recipe_options.merge!(instruction_preparations_step: all_instruction_preparations_step.nil? ? nil : all_instruction_preparations_step)
 			recipe_options
 		end
 	end
