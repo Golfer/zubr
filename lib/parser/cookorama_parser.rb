@@ -48,9 +48,9 @@ class Zubr::Base::CookoramaParser
 				topic.each do |item|
 					options={}
 					topic_name = item.at('.title a').text unless item.at('.title a').blank?
-					options.merge!(recipe_name: topic_name.nil? ? nil :topic_name)
+					options.merge!(recipe_name: topic_name.nil? ? nil : topic_name)
 					topic_href = item.at('.title a')['href'] unless item.at('.title a').blank?
-					options.merge!(recipe_href: topic_href.nil? ? nil :topic_href)
+					options.merge!(recipe_href: topic_href.nil? ? nil : topic_href)
 					file_name = topic_name.downcase.gsub(' ', '_').gsub('"', '')
 					header_img = item.at('.topic-recipe-img img')
 					options.merge!(header_image: header_img.nil? ? nil : header_img['src'])
