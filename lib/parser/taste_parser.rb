@@ -36,6 +36,24 @@ class Zubr::Base::TasteParser
 			path_to_parse = params.nil? ? URL_PATH : params['url']
 			@path_parse_files = path_to_parse.match(/http:\/\/(.*)/)[1].gsub('.html','')
 			create_dir
+			extract_page_data = Nokogiri::HTML(open(path_to_parse))
+			content_list = extract_page_data.css('.all-recipes')
+			page_collections = content_list.css('.content-item .story-block')
+			page_collections.each do |collection|
+				collection_img  = collection.at('.thumbnail img')['src'] unless collection.at('.thumbnail img').blank?
+				collection_size  = collection.at('.thumbnail span').text.gsub(' Recipes', '') unless collection.at('.thumbnail span').blank?
+				collection_href = collection.at('.heading a')['href'] unless collection.at('.heading a').blank?
+				collection_name = collection.at('.heading a').text unless collection.at('.heading a').blank?
+				#p [collection_size, collection_href]
+				if collection_href
+					p "Start parse collection: #{collection_name}"
+					parse_collections(collection_href)
+					break
+				end
+			end
+
+
+
 			#url = Addressable::URI.parse(path)
 			#p '------------------------------'
 			#p url
@@ -48,7 +66,8 @@ class Zubr::Base::TasteParser
 
 			#extract_page_data = Nokogiri::HTML(open(path_to_parse))
 			#content_list = extract_page_data.css('div.module-content')
-			parse_page(path_to_parse)
+
+
 			#need_parse = content_list.css('div.content-item')
 			#pagination = content_list.css('div.content-item.paging')
 			#p '**************************'
@@ -96,89 +115,85 @@ class Zubr::Base::TasteParser
 		end
 
 
-		def parse_collections(url)
-			p "Start Collection Parse: #{url}"
+		def parse_collections(path)
+			p "Start Collection Parse: #{path}"
+			extract_page_data = Nokogiri::HTML(open(path))
+			our_recipes = extract_page_data.css('.in-collections-all')
+			link_collections = our_recipes.css('.module-controls .tab-set')
+			all_set_collection = {}
+			link_collections.css('li').each do |link_collection|
+				all_set_collection.merge!(Zubr::Base.mask(link_collection.at('a').text.downcase).to_sym =>  link_collection.at('a')['href'])
+			end
+			all_set_collection.each do |key, value|
+				case key
+					when :all_recipes
+						parse_all_recipes(value)
+					else
+						#TODO
+						p [key, value]
+				end
+			end
+
 		end
 
-		def parse_page(parse_url)
-			extract_page_data = Nokogiri::HTML(open(parse_url))
-			content_list = extract_page_data.css('.all-recipes')
-			page_collections = content_list.css('.content-item .story-block')
-			page_collections.each do |collection|
-				collection_img  = collection.at('.thumbnail img')['src'] unless collection.at('.thumbnail img').blank?
-				collection_size  = collection.at('.thumbnail span').text.gsub(' Recipes', '') unless collection.at('.thumbnail span').blank?
-				collection_href = collection.at('.heading a')['href'] unless collection.at('.heading a').blank?
-				collection_name = collection.at('.heading a').text unless collection.at('.heading a').blank?
-				#p [collection_size, collection_href]
-				if collection_href
-					time_start_parse_collection = Time.now
-					p "Start parse collection: #{collection_name}"
-					p collection_href
-					time_finish_parse_collection = Time.now - time_start_parse_collection
-					p "Finished parse collection #{time_finish_parse_collection}: #{collection_name}"
-					break
+		def parse_all_recipes(path)
+			p "Start Parse All recipes: #{path}"
+			extract_all_recipes = Nokogiri::HTML(open(path))
+			all_recipes_module = extract_all_recipes.css('.module-content')
+			all_recipes = all_recipes_module.css('.content-item .story-block')
+			all_recipes.each do |recipe|
+				options={}
+				recipe_name = recipe.at('.heading a').text unless recipe.at('.heading a').blank?
+				file_name = Zubr::Base.mask(recipe_name.downcase)
+				options.merge!(recipe_name: recipe_name.nil? ? nil : recipe_name)
+				recipe_href = recipe.at('.heading a')['href'] unless recipe.at('.heading a').blank?
+				options.merge!(recipe_href: recipe_href.nil? ? nil : recipe_href)
+				recipe_img  = recipe.at('img')['src'] unless recipe.at('img').blank?
+				options.merge!(header_img: recipe_img.nil? ? nil : recipe_img['src'])
+				Zubr::Base.upload_image(recipe_img['src'], file_name) unless recipe_img.blank?
+				#Zubr::Base.upload_image(recipe.at('img')['src'], file_name) unless unless recipe.at('img').blank?
+				#TODO write method parse current recipe
+				#p [recipe_href, file_name , recipe_img] #todo
+				if recipe_href
+					p "Write to file #{file_name}"
+					parse_recipe(recipe_href)
+					#options.merge!(parse_recipe(recipe_href))
 				end
-				#p collection.at('.heading a')['href'] unless collection.at('.heading a').blank?
 			end
-			#topic = content_list.css('div .topic')
-			#topic.each do |item|
-			#	options={}
-			#	topic_name = item.at('.title a').text unless item.at('.title a').blank?
-			#	options.merge!(recipe_name: topic_name.nil? ? nil :topic_name)
-			#	topic_href = item.at('.title a')['href'] unless item.at('.title a').blank?
-			#	options.merge!(recipe_href: topic_href.nil? ? nil :topic_href)
-			#	file_name = topic_name.downcase.gsub(' ', '_').gsub('"', '')
-			#	header_img = item.at('.topic-recipe-img img')
-			#	options.merge!(header_image: header_img.nil? ? nil : header_img['src'])
-			#	Zubr::Base.upload_image(header_img['src'], file_name) unless header_img.blank?
-			#
-			#	p "Write to file #{file_name}"
-			#
-			#	speed_cooking = item.css('.topic-recipe-content ul').at('li:first-child a').text unless item.css('.topic-recipe-content ul').at('li:first-child a').blank?
-			#	options.merge!(speed_cooking: speed_cooking.nil? ? nil : speed_cooking)
-			#
-			#	date_create = item.css('.voting-border').at('.date').text unless item.css('.voting-border').at('.date').blank?
-			#	options.merge!(date_create: date_create.nil? ? nil : date_create)
-			#
-			#	top_tags = []
-			#	item.css('.top-tags li').each do |top_tag|
-			#		top_tags.push(top_tag.at('a').text)
-			#	end
-			#	options.merge!(top_tags: top_tags.nil? ? nil : top_tags)
-			#
-			#	tags = []
-			#	item.css('.tags li').each do |tag|
-			#		tags.push(tag.at('a').text)
-			#	end
-			#	options.merge!(tags: tags.nil? ? nil : tags)
-			#
-			#	unless topic_href.blank?
-			#		options.merge!(parse_recipe(topic_href))
-			#	end
-			#
-			#	Zubr::Base.save_into_yaml_file(@path_parse_files, file_name, options) unless file_name.blank?
-			#	sleep 1
+			#TODO Pagination recursed method!!!!!
+			pagination_block = all_recipes_module.css('.paging')
+			#if pagination_block
+			#	p 'Start parse  pagination when this pagination exists'
+			#	p pagination_block
+			#	p 'Start parse  pagination when this pagination exists'
 			#end
+			#Zubr::Base.save_into_yaml_file(@path_parse_files, file_name, options) unless file_name.blank?
+			sleep 1
+
 		end
 
 		def parse_recipe(url)
 			return false if url.nil?
+
+			p '*******parse_recipe********************'
+			p [url]
+			p '*******parse_recipe********************'
+
 			recipe_options = {}
 			extract_recipe_data = Nokogiri::HTML(open(url))
-
 			all_ingridients = []
-			ingridients_table = extract_recipe_data.css('#view-topic .ingredients tr')
-			ingridients_table.each do |ingredient|
-				all_ingridients.push(ingredient.at('td:first .dot a').text => ingredient.at('td:nth-child(2)').text.to_s) unless ingredient['class'] != 'ingredient'
-			end
-			recipe_options.merge!(ingridients: all_ingridients.nil? ? nil : all_ingridients)
-
-			instructions = extract_recipe_data.css('#view-topic').at('.content .instructions').text
-			recipe_options.merge!(instructions: instructions.nil? ? nil : instructions)
-
-			instruction_preparations = extract_recipe_data.css('#view-topic').at('.content').after('.instructions').text
-			recipe_options.merge!(instruction_preparations: instruction_preparations.nil? ? nil : instruction_preparations)
-
+			#ingridients_table = extract_recipe_data.css('#view-topic .ingredients tr')
+			#ingridients_table.each do |ingredient|
+			#	all_ingridients.push(ingredient.at('td:first .dot a').text => ingredient.at('td:nth-child(2)').text.to_s) unless ingredient['class'] != 'ingredient'
+			#end
+			#recipe_options.merge!(ingridients: all_ingridients.nil? ? nil : all_ingridients)
+			#
+			#instructions = extract_recipe_data.css('#view-topic').at('.content .instructions').text
+			#recipe_options.merge!(instructions: instructions.nil? ? nil : instructions)
+			#
+			#instruction_preparations = extract_recipe_data.css('#view-topic').at('.content').after('.instructions').text
+			#recipe_options.merge!(instruction_preparations: instruction_preparations.nil? ? nil : instruction_preparations)
+			#
 			recipe_options
 		end
 	end
