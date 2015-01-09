@@ -1,111 +1,149 @@
 class Zubr::Base::TasteParser
-	def initialize
-		logger.info "Initialize Zubr Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
-	end
+  def initialize
+    logger.info "Initialize Zubr Taste Parser #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
+  end
 
-	class << self
-		URL_PATH = 'http://www.taste.com.au/'
-		def parse(url = URL_PATH)
-			p "Start Parse #{url}"
-			@path_parse_files = url.match(/http:\/\/(.*)/)[1].gsub('.html','')
-			create_dir
-			extract_page_data = Nokogiri::HTML(open(url))
-			content_list = extract_page_data.css('.module-content')
+  class << self
+    URL_PATH = 'http://www.taste.com.au/recipes/collections/'
 
-			pagination = content_list.css('.paging .page-numbers')
-			if pagination.blank?
-				parse_page(url)
-			else
-				parse_page(url)
-				pagination.css('a').each do |item|
-					if item['class'] == 'on selected'
-						@current_page_number = item.text.to_i unless item.at('a').blank?
-						break
-					end
-					unless item.blank?
-						unless (@current_page_number + 1) != item.text.to_i
-							@path_parse_files = item['href'].match(/http:\/\/(.*)/)[1]
-							create_dir
-							parse(item['href'])
-						end
-					end
-				end
-			end
+    def parse(params)
+      path_to_parse = params.nil? ? URL_PATH : params['url']
+      create_dir(path_to_parse.match(/http:\/\/(.*)/)[1].gsub('.html',''))
+      extract_page_data = Nokogiri::HTML(open(path_to_parse))
+      content_list = extract_page_data.css('.all-recipes')
+      page_collections = content_list.css('.content-item .story-block')
+      page_collections.each do |collection|
+        collection_img  = collection.at('.thumbnail img')['src'] unless collection.at('.thumbnail img').blank?
+        collection_size  = collection.at('.thumbnail span').text.gsub(' Recipes', '') unless collection.at('.thumbnail span').blank?
+        collection_href = collection.at('.heading a')['href'] unless collection.at('.heading a').blank?
+        collection_name = collection.at('.heading a').text unless collection.at('.heading a').blank?
 
-		end
+        options = {
+            collection_href_path: collection_href,
+            collection_full_name: collection_name,
+            collection_count_recipe: collection_size,
+            collection_img_thumbs: collection_img,
+            collection_settings_path: Zubr::Base.generate_correct_path(collection_href)
+        }
 
-		private
+        get_current_collection(options) unless options[:collection_href_path].nil?
+      end
+    end
 
-		def create_dir
-			p "Create Dirs when does not exists: #{@path_parse_files}"
-			Zubr::Base.create_directory("#{Zubr::YAML_DIR_FILE}/#{@path_parse_files}")
-			Zubr::Base.create_directory("#{Zubr::IMAGE_DIR_FILE}/#{@path_parse_files}")
-		end
+    def get_current_collection(options)
+      return nil if options.nil?
+      p "Start parse collection #{options[:collection_full_name]}: #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
 
-		def parse_page(parse_url)
-			extract_page_data = Nokogiri::HTML(open(parse_url))
-			content_list = extract_page_data.css('.module-content')
+      unless options[:collection_href_path].blank?
+        collection_image_file = options[:collection_img_thumbs].match(/collections\/(.*)/)[1].gsub(' ','')
+        Zubr::Base.upload_image(options[:collection_img_thumbs], options[:collection_settings_path], collection_image_file) unless options[:collection_img_thumbs].blank?
 
-			topic = content_list.css('div .topic')
-			topic.each do |item|
-				options={}
-				topic_name = item.at('.title a').text unless item.at('.title a').blank?
-				options.merge!(recipe_name: topic_name.nil? ? nil :topic_name)
-				topic_href = item.at('.title a')['href'] unless item.at('.title a').blank?
-				options.merge!(recipe_href: topic_href.nil? ? nil :topic_href)
-				file_name = topic_name.downcase.gsub(' ', '_').gsub('"', '')
-				header_img = item.at('.topic-recipe-img img')
-				options.merge!(header_image: header_img.nil? ? nil : header_img['src'])
-				Zubr::Base.upload_image(header_img['src'], file_name) unless header_img.blank?
+        extract_page_data = Nokogiri::HTML(open(options[:collection_href_path]))
+        all_recipes = extract_page_data.css('.in-collections-all')
+        link_collections = all_recipes.css('.module-controls .tab-set')
+        all_set_collection = {}
+        link_collections.css('li').each { |link| all_set_collection.merge!(Zubr::Base.mask(link.at('a').text.downcase).to_sym =>  link.at('a')['href']) }
+        get_collection_all_recipes(options.merge!(current_collection_all_recipes_path: all_set_collection[:all_recipes])) unless all_set_collection[:all_recipes].nil?
+      end
+    end
 
-				p "Write to file #{file_name}"
+    def get_collection_all_recipes(options)
+      create_dir(options[:current_collection_all_recipes_path].match(/http:\/\/(.*)/)[1])
+      page_data = Nokogiri::HTML(open(options[:current_collection_all_recipes_path]))
+      pagination = get_list_pagination(page_data.css('.paging a'))
+      pagination.each{ |key, path_link| p "Parse collection (#{options[:collection_full_name]}): page: #{path_link}"; get_page_recipe(path_link) }
+    end
 
-				speed_cooking = item.css('.topic-recipe-content ul').at('li:first-child a').text unless item.css('.topic-recipe-content ul').at('li:first-child a').blank?
-				options.merge!(speed_cooking: speed_cooking.nil? ? nil : speed_cooking)
+    def get_page_recipe(page_link)
+      page_current_path = page_link.match(/http:\/\/(.*)/)[1]
+      create_dir(page_current_path)
+      page_data = Nokogiri::HTML(open(page_link))
+      all_recipes_module = page_data.css('.module-content')
 
-				date_create = item.css('.voting-border').at('.date').text unless item.css('.voting-border').at('.date').blank?
-				options.merge!(date_create: date_create.nil? ? nil : date_create)
+      recipes = all_recipes_module.css('.content-item .story-block')
+      recipes.each do |recipe|
+        recipe_options={}
+        recipe_name = recipe.at('.heading a').text unless recipe.at('.heading a').blank?
+        file_name = Zubr::Base.mask(recipe_name.downcase)
+        recipe_options.merge!(recipe_name: recipe_name.nil? ? nil : recipe_name)
+        recipe_href = recipe.at('.heading a')['href'] unless recipe.at('.heading a').blank?
+        recipe_options.merge!(recipe_href: recipe_href.nil? ? nil : recipe_href)
+        recipe_thumb  = recipe.at('img')['src'] unless recipe.at('img').blank?
+        recipe_options.merge!(header_img: recipe_thumb.nil? ? nil : recipe_thumb)
+        path_to_current_recipe = "#{page_current_path}/#{file_name}"
+        recipe_options.merge!(path_to_current_recipe: path_to_current_recipe.nil? ? nil : path_to_current_recipe)
 
-				top_tags = []
-				item.css('.top-tags li').each do |top_tag|
-					top_tags.push(top_tag.at('a').text)
-				end
-				options.merge!(top_tags: top_tags.nil? ? nil : top_tags)
+        create_dir(path_to_current_recipe)
+        Zubr::Base.upload_image(recipe_thumb, path_to_current_recipe, "#{file_name}.jpeg") unless recipe_thumb.blank? #TODO need to refactored
+        get_current_recipe(recipe_options) unless recipe_options[:recipe_href].blank?
+      end
+    end
 
-				tags = []
-				item.css('.tags li').each do |tag|
-					tags.push(tag.at('a').text)
-				end
-				options.merge!(tags: tags.nil? ? nil : tags)
+    #TODO needs to refactored
+    def get_current_recipe(options)
+      return false if options[:recipe_href].nil?
+      Zubr::Base.save_into_yaml_file("#{options[:path_to_current_recipe]}/", 'setting_options', options)
+      recipe_options = {}
+      extract_recipe_data = Nokogiri::HTML(open(options[:recipe_href]))
+      data_page = extract_recipe_data.css('.group-2 .group-content')
+      quote_left = data_page.css('.recipe-detail .quote-left').text
+      recipe_options.merge!(quote_left: quote_left.nil? ? nil : quote_left)
+      prep_time = data_page.css('.content-item .prepTime em').text
+      recipe_options.merge!(prep_time: prep_time.nil? ? nil : prep_time)
+      cook_time = data_page.css('.content-item .cookTime em').text
+      recipe_options.merge!(cook_time: cook_time.nil? ? nil : cook_time)
+      ingredient_count = data_page.css('.content-item .ingredientCount em').text
+      recipe_options.merge!(ingredient_count: ingredient_count.nil? ? nil : ingredient_count)
+      difficulty_title = data_page.css('.content-item .difficultyTitle em').text
+      recipe_options.merge!(difficulty_title: difficulty_title.nil? ? nil : difficulty_title)
+      servings = data_page.css('.content-item .servings em').text
+      recipe_options.merge!(servings: servings.nil? ? nil : servings)
+      rating = data_page.css('.content-item .rating .star-level').text
+      recipe_options.merge!(rating: rating.nil? ? nil : rating)
+      recipe_img_large  = data_page.at('.recipe-detail .print-thumb')['src']
+      recipe_options.merge!(recipe_img_large: recipe_img_large.nil? ? nil : recipe_img_large)
 
-				unless topic_href.blank?
-					options.merge!(parse_recipe(topic_href))
-				end
+      #TODO
+      source_author = data_page.css('.source-author')
 
-				Zubr::Base.save_into_yaml_file(@path_parse_files, file_name, options) unless file_name.blank?
-				sleep 1
-			end
-		end
+      all_ingridients = []
+      ingredients_table = data_page.css('.ingredients-nutrition .ingredients-tab-content')
+      ingredients_table.css('li').each do |ingredient|
+        all_ingridients.push(ingredient.text.split.join(" ").to_s) if ingredient
+      end
+      recipe_options.merge!(ingridients: all_ingridients.nil? ? nil : all_ingridients)
 
-		def parse_recipe(url)
-			return false if url.nil?
-			recipe_options = {}
-			extract_recipe_data = Nokogiri::HTML(open(url))
+      #TODO
+      nutritions_table = data_page.css('.ingredients-nutrition .nutrition-tab-content')
 
-			all_ingridients = []
-			ingridients_table = extract_recipe_data.css('#view-topic .ingredients tr')
-			ingridients_table.each do |ingredient|
-				all_ingridients.push(ingredient.at('td:first .dot a').text => ingredient.at('td:nth-child(2)').text.to_s) unless ingredient['class'] != 'ingredient'
-			end
-			recipe_options.merge!(ingridients: all_ingridients.nil? ? nil : all_ingridients)
+      all_instruction_preparations_step = []
 
-			instructions = extract_recipe_data.css('#view-topic').at('.content .instructions').text
-			recipe_options.merge!(instructions: instructions.nil? ? nil : instructions)
+      data_page.css('.method-tab-content li').each do |method_step|
+        all_instruction_preparations_step.push(Zubr::Base.mask(method_step.css('.step').text.downcase).to_sym => method_step.css('.description').text.to_s) if method_step
+      end
 
-			instruction_preparations = extract_recipe_data.css('#view-topic').at('.content').after('.instructions').text
-			recipe_options.merge!(instruction_preparations: instruction_preparations.nil? ? nil : instruction_preparations)
+      recipe_options.merge!(instruction_preparations_step: all_instruction_preparations_step.nil? ? nil : all_instruction_preparations_step)
 
-			recipe_options
-		end
-	end
+      Zubr::Base.save_into_yaml_file("#{options[:path_to_current_recipe]}/", Zubr::Base.mask(options[:recipe_name]), recipe_options)
+      Zubr::Base.upload_image(recipe_img_large, options[:path_to_current_recipe], Zubr::Base.mask(options[:recipe_name]), true ) unless recipe_img_large.blank?
+
+      sleep(3)
+    end
+
+    private
+
+    def get_list_pagination(pagination_list)
+      result = {}
+      last_page =  pagination_list[pagination_list.length-2] #TODO need refactored
+      first_el = pagination_list.first.text
+      end_el = last_page.text
+      (first_el..end_el).map{ |i| result.merge!( "page_#{i}".to_sym => "#{pagination_list.first['href']}/#{i}" ) }
+      result
+    end
+
+    def create_dir(path)
+      Zubr::Base.create_directory("#{Zubr::YAML_DIR_FILE}/#{path}")
+      Zubr::Base.create_directory("#{Zubr::IMAGE_DIR_FILE}/#{path}")
+    end
+  end
 end
