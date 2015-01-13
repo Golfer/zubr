@@ -12,9 +12,10 @@ Dir.glob('../lib/**/*.rb').each { |r| require_relative r }
 
 RSpec.configure do |config|
   config.color = true
+  config.include Rack::Test::Methods
 end
 
 # Add an app method for RSpec
 def app
-  Sinatra::Base
+  Zubr::Base
 end

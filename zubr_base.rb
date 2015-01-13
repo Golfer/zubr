@@ -65,7 +65,7 @@ module Zubr
     get '/' do
       logger.info "Root path #{Time.now.strftime('%m/%d/%Y %H:%M %p')}"
       content_type :json
-      { message: 'go to Home page' }.to_json
+      { message: 'This is home page' }.to_json
     end
 
     get '/cookorama' do
