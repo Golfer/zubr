@@ -6,8 +6,9 @@ describe Zubr do
       expect(last_response.status).to eq 200
     end
 
-    xit 'has response status success' do
+    it 'has response status not success' do
       get '/not_be_qood_status_response'
+      expect(last_response.status).to eq 404
     end
 
     xit 'has response status taste' do
